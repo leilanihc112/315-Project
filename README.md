@@ -1,5 +1,5 @@
 # 315-Project
-Frontend User Interface for Project 1
+Front end User Interface for Project 1
 
 Languages: php, html, and mySQL
 
