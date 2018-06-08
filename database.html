@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Setting table style -->
+<style>
+	table,th,td
+	{
+		border: 1px solid black;
+		border-collapse: collapse;
+	}
+</style>
+</head>
+<body>
+	<!-- Header and subheader -->
+	<h2>Walk-In Traffic Counter Database</h2>
+	<p>People who walk in throughout the day</p>
+	<!-- Table -->
+	<table style="width: 100%">
+			<tr>
+				<th>Count</th>
+				<th>DateTime</th>
+			</tr>
+		<tbody>
+			<?php
+			include('login.php');
+			# Now start saving database info and print to table on webpage
+			$result_1 = mysql_query("SELECT * FROM `Arduino`", $connect);
+			while ($row = mysql_fetch_array($result_1)) 
+			{
+			?>
+				<tr>
+					<td align="center"><?php echo $row['Count'];?></td>
+					<td align="center"><?php echo $row['DateTime'];?></td>
+				</tr>
+			<?php
+			}
+			?>
+		</tbody>
+	</table>
+	<br><br>
+</body>
+</html>

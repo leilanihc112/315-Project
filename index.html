@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<h2> Walk In Traffic Counter </h2>
+</head>
+<body>
+<?php include('login.php'); ?>
+<form action="/leilanihc112/statistics.html" method="post">
+  <br><h3>Select timeframe for statistics:</h3>
+  Starting at:
+  <input type="datetime-local" name="datetime1"><br>
+  Ending at:
+  <input type="datetime-local" name="datetime2">
+  <br><br>
+  Timeframe type:
+  <select name="timeframe">
+  <option value="year">Year</option>
+  <option value="month">Month</option>
+  <option value="day">Day</option>
+  <option value="hour">Hour</option>
+  <option value="minute">Minute</option>
+  <option value="total">Total</option>
+  </select>
+  <br><br>
+  <input type="submit" value="Submit">
+</form>
+
+<form action="/leilanihc112/database.html" method="post">
+  <br><h3>To see full database:</h3>
+  <input type="submit" value="Submit">
+</form>
+
+</body>
+</html>

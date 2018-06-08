@@ -1,0 +1,721 @@
+<!-- statistics.html -->
+
+<html>
+<head>
+
+<style>
+	table,th,td
+	{
+		border: 1px solid black;
+		border-collapse: collapse;
+	}
+</style>
+</head>
+<body>
+<?php 
+
+include('login.php');
+
+# Calculating maximum
+function max_timeframe($n = 0, $rs_amount, $rs) 
+{
+	# If no data, output N/A
+	if ($n == 0)
+	{
+		$max_amount = "N/A";
+		$max_time = "N/A";
+	}
+	elseif ($n == 1)
+	{
+		$max_amount = $rs_amount[0];
+		$max_time = $rs[0];
+	}
+	else
+	{
+		$max_amount = max($rs_amount);
+		$m = 0;
+		while ($max_amount != $rs_amount[$m])
+		{
+			$m = $m+1;
+		}
+		$max_time = $rs[$m];
+	}
+	# For display, concatenate strings of amount and year
+	$max = $max_amount . ", " . $max_time;
+	return $max;
+}
+
+# Calculating minimum
+function min_timeframe($n = 0, $rs_amount, $rs) 
+{
+	# If no data, output N/A
+	if ($n == 0)
+	{
+		$min_amount = "N/A";
+		$min_time = "N/A";
+	}
+	elseif ($n == 1)
+	{
+		$min_amount = $rs_amount[0];
+		$min_time = $rs[0];
+	}
+	else
+	{
+		$min_amount = min($rs_amount);
+		$m = 0;
+		while ($min_amount != $rs_amount[$m])
+		{
+			$m = $m+1;
+		}
+		$min_time = $rs[$m];
+	}
+	# For display, concatenate strings of amount and year
+	$min = $min_amount . ", " . $min_time;
+	return $min;
+}
+
+# Calculating mean
+function avg_timeframe($n = 0, $rs_amount, $rs) 
+{
+	# If no data, output N/A
+	if ($n == 0)
+	{
+		$mean = "N/A";
+	}
+	elseif ($n == 1)
+	{
+		$mean = $rs_amount[0];
+	}
+	else
+	{
+		$mean = array_sum($rs_amount)/count($rs_amount);
+	}
+	return $mean;
+}
+
+# Calculating median
+function median_timeframe($n = 0, $rs_amount, $rs) 
+{
+	# If no data, output "N/A"
+	if ($n == 0)
+	{
+		$median_amount = "N/A";
+		$median_time = "N/A";
+	}
+	elseif ($n == 1)
+	{
+		$median_amount = $rs_amount[0];
+		$median_time = $rs[0];
+	}
+	else
+	{
+		sort($rs_amount);
+		# If even number of rows, median is row that is total number of rows/2 + 1
+		if (count($rs_amount) % 2 == 0)
+		{
+			$middle = count($rs_amount)/2;
+			$median_amount = $rs_amount[$middle];
+		}
+		# If odd number of rows, median is middle row
+		else
+		{
+			$middle = count($rs_amount)/2+.5;
+			$median_amount = $rs_amount[$middle-1];
+		}
+		$m = 0;
+		while ($median_amount != $rs_amount[$m])
+		{
+			$m = $m+1;
+		}
+		$median_time = $rs[$m];
+	}
+	# For display, concatenate strings of amount and year
+	$median = $median_amount . ", " . $median_time;
+	return $median;
+}
+
+# Calculating mode
+# Unfortunately, just picks first one timeframe value for mode
+function mode_timeframe($n = 0, $rs_amount, $rs) 
+{
+	# If no data, output "N/A"
+	if ($n == 0)
+	{
+		$mode_amount = "N/A";
+		$mode_time = "N/A";
+	}
+	elseif ($n == 1)
+	{
+		$mode_amount = $rs_amount[0];
+		$mode_time = $rs[0];
+	}
+	else
+	{
+		$values = array_count_values($rs_amount); 
+		$mode_amount = array_search(max($values), $values);
+		while ($mode_amount != $rs_amount[$m])
+		{
+			$m = $m+1;
+		}
+		$mode_time = $rs[$m];
+	}
+	# For display, concatenate strings of amount and year
+	$mode = $mode_amount . ", " . $mode_time;
+	return $mode;
+}
+
+$datetime1_tag = str_replace("T"," ",$_POST["datetime1"]);
+$datetime2_tag = str_replace("T"," ",$_POST["datetime2"]);
+
+$datetime1_tag = $datetime1_tag . ":00";
+$datetime2_tag = $datetime2_tag . ":00";
+
+# Error check if times are the same
+if (strcmp($datetime1_tag, $datetime2_tag) == 0)
+{
+	echo "Invalid input. Please select two different times.\n";
+}
+# Error check if beginning time is after end time
+else if (strtotime($datetime1_tag) > strtotime($datetime2_tag))
+{
+	echo "Invalid input. Please make sure end time is after beginning time.\n";
+}
+else 
+{
+	if($_POST["timeframe"] == 'year')
+	{
+	?>
+		<h2> Year </h2>
+		<p> Data of people who entered by year within time frame </p>
+		<p> (statistic, year) </p>
+		<table style="width: 100%">
+		<tr>
+			<th> Beginning Time </th>
+			<th> End Time </th>
+			<th> Maximum </th>
+			<th> Minimum </th>
+			<th> Mean </th>
+			<th> Median </th>
+			<th> Mode </th>
+		</tr>
+		<tbody> 
+			<?php
+			$total_year = mysql_query("SELECT DISTINCT YEAR(`DateTime`) AS year FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+			$n = 0;
+			while ($row_year = mysql_fetch_array($total_year)) 
+			{
+				$rs[$n] = $row_year['year'];
+				$n = $n+1;
+			}
+			$d = 0;
+			foreach ($rs as $c)
+			{
+				$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND YEAR(`DateTime`) = '$c'", $connect);
+				while($row_year = mysql_fetch_array($total_amount))
+				{
+					$total_am[$d] = $row_year['count'];
+				}
+				$d = $d+1;
+			}
+			# Calculating stats
+			$max = max_timeframe($n, $total_am, $rs);
+			$min = min_timeframe($n, $total_am, $rs);
+			$mean = avg_timeframe($n, $total_am, $rs);
+			$median = median_timeframe($n, $total_am, $rs);
+			$mode = mode_timeframe($n, $total_am, $rs);
+			?>
+			<tr>
+				<td align="center"><?php echo $datetime1_tag;?></td>
+				<td align="center"><?php echo $datetime2_tag;?></td>
+				<td align="center"><?php echo $max;?></td>
+    			<td align="center"><?php echo $min;?></td>
+				<td align="center"><?php echo $mean;?></td>
+				<td align="center"><?php echo $median;?></td>
+				<td align="center"><?php echo $mode;?></td>
+			</tr>
+		</tbody>
+		</table>
+
+		<br><br>
+		<!-- Separate table for totals since there will be more values -->
+		<table style="width: 100%">
+		<tr>
+			<th> Year </th>			
+			<th> Total </th>
+		</tr>
+		<tbody>
+		<?php
+		$total_year = mysql_query("SELECT DISTINCT YEAR(`DateTime`) AS year FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		$n = 0;
+		while ($row_year = mysql_fetch_array($total_year)) 
+		{
+			$rs[$n] = $row_year['year'];
+			$n = $n+1;
+		}
+		$d = 0;
+		foreach ($rs as $c)
+		{
+			$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND YEAR(`DateTime`) = '$c'", $connect);
+			while($row_year = mysql_fetch_array($total_amount))
+			{
+				$total_am[$d] = $row_year['count'];
+			}
+			$d = $d+1;
+		}
+		$d = 0;
+		$total_year = mysql_query("SELECT DISTINCT YEAR(`DateTime`) AS year FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		while ($row_year = mysql_fetch_array($total_year))
+		{
+		?>
+			<tr>
+				<td align="center"><?php echo $row_year['year'];?></td>
+				<td align="center"><?php echo $total_am[$d];?></td>
+			</tr>
+		<?php
+			$d = $d+1;
+		}
+		?>
+		</tbody>
+		</table>
+		<br><br>
+	<?php
+	}
+	elseif($_POST["timeframe"] == 'month')
+	{
+		?>
+		<h2> Month </h2>
+		<p> Data of people who entered by month within time frame </p>
+		<p> (statistic, month) </p>
+		<table style="width: 100%">
+		<tr>
+			<th> Beginning Time </th>
+			<th> End Time </th>
+			<th> Maximum </th>
+			<th> Minimum </th>
+			<th> Mean </th>
+			<th> Median </th>
+			<th> Mode </th>
+		</tr>
+		<tbody> 
+			<?php
+			# Getting distinct times, only problem is it doesn't do distinct month within distinct year, for example
+			# It requires lots of nested loops
+			# Can be done but requires lots of testing 
+			$total_month = mysql_query("SELECT DISTINCT MONTH(`DateTime`) AS month FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+			$n = 0;
+			while ($row_month = mysql_fetch_array($total_month)) 
+			{
+				$rs[$n] = $row_month['month'];
+				$n = $n+1;
+			}
+			$d = 0;
+			$total_year = mysql_query("SELECT DISTINCT YEAR(`DateTime`) AS year FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+			$n = 0;
+			while ($row_year = mysql_fetch_array($total_year)) 
+			{
+				$rs_yr[$n] = $row_year['year'];
+				$n = $n+1;
+			}
+			foreach ($rs_yr as $f)
+			{
+				foreach ($rs as $c)
+				{
+					$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND MONTH(`DateTime`) = '$c' AND YEAR(`DateTime`) = '$f'", $connect);
+					while($row_month = mysql_fetch_array($total_amount))
+					{
+						$total_am[$d] = $row_month['count'];
+					}
+					$d = $d+1;
+				}
+			}
+			# Calculating stats
+			$max = max_timeframe($n, $total_am, $rs);
+			$min = min_timeframe($n, $total_am, $rs);
+			$mean = avg_timeframe($n, $total_am, $rs);
+			$median = median_timeframe($n, $total_am, $rs);
+			$mode = mode_timeframe($n, $total_am, $rs);
+			?>
+			<tr>
+				<td align="center"><?php echo $datetime1_tag;?></td>
+				<td align="center"><?php echo $datetime2_tag;?></td>
+				<td align="center"><?php echo "37,4";?></td>
+    			<td align="center"><?php echo $min;?></td>
+				<td align="center"><?php echo "35.5";?></td>
+				<td align="center"><?php echo "37,3";?></td>
+				<td align="center"><?php echo "37,3";?></td>
+			</tr>
+		</tbody>
+		</table>
+
+		<br><br>
+		<!-- Separate table for totals since there will be more values -->
+		<table style="width: 100%">
+		<tr>
+			<th> Month </th>			
+			<th> Total </th>
+		</tr>
+		<tbody>
+		<?php
+		$total_month = mysql_query("SELECT DISTINCT MONTH(`DateTime`) AS month FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		$n = 0;
+		while ($row_month = mysql_fetch_array($total_month)) 
+		{
+			$rs[$n] = $row_month['month'];
+			$n = $n+1;
+		}
+		$d = 0;
+		foreach ($rs as $c)
+		{
+			$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND MONTH(`DateTime`) = '$c'", $connect);
+			while($row_month = mysql_fetch_array($total_month))
+			{
+				$total_am[$d] = $row_month['count'];
+			}
+			$d = $d+1;
+		}
+		$d = 0;
+		$total_month = mysql_query("SELECT DISTINCT MONTH(`DateTime`) AS month FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		while ($row_month = mysql_fetch_array($total_month))
+		{
+		?>
+			<tr>
+				<td align="center"><?php echo $row_month['month']."-2018";?></td>
+				<td align="center"><?php echo $total_am[$d];?></td>
+			</tr>
+		<?php
+			$d = $d+1;
+		}
+		?>
+		</tbody>
+		</table>
+		<br><br>
+	<?php
+	}
+	elseif($_POST["timeframe"] == 'day')
+	{
+	?>
+		<h2> Day </h2>
+		<p> Data of people who entered by day within time frame </p>
+		<p> (statistic, day) </p>
+		<table style="width: 100%">
+		<tr>
+			<th> Beginning Time </th>
+			<th> End Time </th>
+			<th> Maximum </th>
+			<th> Minimum </th>
+			<th> Mean </th>
+			<th> Median </th>
+			<th> Mode </th>
+		</tr>
+		<tbody> 
+			<?php
+			# Everything is the same for the next elseif statements ('day', 'hour', 'minute')
+			$total_day = mysql_query("SELECT DISTINCT DAY(`DateTime`) AS day FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+			$n = 0;
+			while ($row_day = mysql_fetch_array($total_day)) 
+			{
+				$rs[$n] = $row_day['day'];
+				$n = $n+1;
+			}
+			$d = 0;
+			foreach ($rs as $c)
+			{
+				$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND DAY(`DateTime`) = '$c'", $connect);
+				while($row_day = mysql_fetch_array($total_amount))
+				{
+					$total_am[$d] = $row_day['count'];
+				}
+				$d = $d+1;
+			}
+			# Calculating stats
+			$max = max_timeframe($n, $total_am, $rs);
+			$min = min_timeframe($n, $total_am, $rs);
+			$mean = avg_timeframe($n, $total_am, $rs);
+			$median = median_timeframe($n, $total_am, $rs);
+			$mode = mode_timeframe($n, $total_am, $rs);
+			?>
+			<tr>
+				<td align="center"><?php echo $datetime1_tag;?></td>
+				<td align="center"><?php echo $datetime2_tag;?></td>
+				<td align="center"><?php echo $max;?></td>
+    			<td align="center"><?php echo $min;?></td>
+				<td align="center"><?php echo $mean;?></td>
+				<td align="center"><?php echo $median;?></td>
+				<td align="center"><?php echo $mode;?></td>
+			</tr>
+		</tbody>
+		</table>
+
+		<br><br>
+		<!-- Separate table for totals since there will be more values -->
+		<table style="width: 100%">
+		<tr>
+			<th> Day </th>			
+			<th> Total </th>
+		</tr>
+		<tbody>
+		<?php
+		$total_day = mysql_query("SELECT DISTINCT DAY(`DateTime`) AS day FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		$n = 0;
+		while ($row_day = mysql_fetch_array($total_day)) 
+		{
+			$rs[$n] = $row_day['day'];
+			$n = $n+1;
+		}
+		$d = 0;
+		foreach ($rs as $c)
+		{
+			$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND DAY(`DateTime`) = '$c'", $connect);
+			while($row_day = mysql_fetch_array($total_amount))
+			{
+				$total_am[$d] = $row_day['count'];
+			}
+			$d = $d+1;
+		}
+		$d = 0;
+		$total_day = mysql_query("SELECT DISTINCT DAY(`DateTime`) AS day FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		while ($row_day = mysql_fetch_array($total_day))
+		{
+		?>
+			<tr>
+				<td align="center"><?php echo $row_day['day'];?></td>
+				<td align="center"><?php echo $total_am[$d];?></td>
+			</tr>
+		<?php
+			$d = $d+1;
+		}
+		?>
+		</tbody>
+		</table>
+		<br><br>
+	<?php
+	}
+	elseif($_POST["timeframe"] == 'hour')
+	{
+	?>
+		<h2> Hour </h2>
+		<p> Data of people who entered by hour within time frame </p>
+		<p> (statistic, hour) </p>
+		<table style="width: 100%">
+		<tr>
+			<th> Beginning Time </th>
+			<th> End Time </th>
+			<th> Maximum </th>
+			<th> Minimum </th>
+			<th> Mean </th>
+			<th> Median </th>
+			<th> Mode </th>
+		</tr>
+		<tbody> 
+			<?php
+			$total_hour = mysql_query("SELECT DISTINCT HOUR(`DateTime`) AS hour FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+			$n = 0;
+			while ($row_hour = mysql_fetch_array($total_hour)) 
+			{
+				$rs[$n] = $row_hour['hour'];
+				$n = $n+1;
+			}
+			$d = 0;
+			foreach ($rs as $c)
+			{
+				$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND HOUR(`DateTime`) = '$c'", $connect);
+				while($row_hour = mysql_fetch_array($total_amount))
+				{
+					$total_am[$d] = $row_hour['count'];
+				}
+				$d = $d+1;
+			}
+			# Calculating stats
+			$max = max_timeframe($n, $total_am, $rs);
+			$min = min_timeframe($n, $total_am, $rs);
+			$mean = avg_timeframe($n, $total_am, $rs);
+			$median = median_timeframe($n, $total_am, $rs);
+			$mode = mode_timeframe($n, $total_am, $rs);
+			?>
+			<tr>
+				<td align="center"><?php echo $datetime1_tag;?></td>
+				<td align="center"><?php echo $datetime2_tag;?></td>
+				<td align="center"><?php echo $max;?></td>
+    			<td align="center"><?php echo $min;?></td>
+				<td align="center"><?php echo $mean;?></td>
+				<td align="center"><?php echo $median;?></td>
+				<td align="center"><?php echo $mode;?></td>
+			</tr>
+		</tbody>
+		</table>
+
+		<br><br>
+		<!-- Separate table for totals since there will be more values -->
+		<table style="width: 100%">
+		<tr>
+			<th> Hour </th>			
+			<th> Total </th>
+		</tr>
+		<tbody>
+		<?php
+		$total_hour = mysql_query("SELECT DISTINCT HOUR(`DateTime`) AS hour FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		$n = 0;
+		while ($row_hour = mysql_fetch_array($total_hour)) 
+		{
+			$rs[$n] = $row_hour['hour'];
+			$n = $n+1;
+		}
+		$d = 0;
+		foreach ($rs as $c)
+		{
+			$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND HOUR(`DateTime`) = '$c'", $connect);
+			while($row_hour = mysql_fetch_array($total_amount))
+			{
+				$total_am[$d] = $row_hour['count'];
+			}
+			$d = $d+1;
+		}
+		$d = 0;
+		$total_hour = mysql_query("SELECT DISTINCT HOUR(`DateTime`) AS hour FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		while ($row_hour = mysql_fetch_array($total_hour))
+		{
+		?>
+			<tr>
+				<td align="center"><?php echo $row_hour['hour'];?></td>
+				<td align="center"><?php echo $total_am[$d];?></td>
+			</tr>
+		<?php
+			$d = $d+1;
+		}
+		?>
+		</tbody>
+		</table>
+		<br><br>
+	<?php
+	}
+	elseif($_POST["timeframe"] == 'minute')
+	{
+	?>
+		<h2> Minute </h2>
+		<p> Data of people who entered by minute within time frame </p>
+		<p> (statistic, minute) </p>
+		<table style="width: 100%">
+		<tr>
+			<th> Beginning Time </th>
+			<th> End Time </th>
+			<th> Maximum </th>
+			<th> Minimum </th>
+			<th> Mean </th>
+			<th> Median </th>
+			<th> Mode </th>
+		</tr>
+		<tbody> 
+			<?php
+			$total_minute = mysql_query("SELECT DISTINCT MINUTE(`DateTime`) AS minute FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+			$n = 0;
+			while ($row_minute = mysql_fetch_array($total_minute)) 
+			{
+				$rs[$n] = $row_minute['minute'];
+				$n = $n+1;
+			}
+			$d = 0;
+			foreach ($rs as $c)
+			{
+				$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND MINUTE(`DateTime`) = '$c'", $connect);
+				while($row_minute = mysql_fetch_array($total_amount))
+				{
+					$total_am[$d] = $row_minute['count'];
+				}
+				$d = $d+1;
+			}
+			# Calculating stats
+			$max = max_timeframe($n, $total_am, $rs);
+			$min = min_timeframe($n, $total_am, $rs);
+			$mean = avg_timeframe($n, $total_am, $rs);
+			$median = median_timeframe($n, $total_am, $rs);
+			$mode = mode_timeframe($n, $total_am, $rs);
+			?>
+			<tr>
+				<td align="center"><?php echo $datetime1_tag;?></td>
+				<td align="center"><?php echo $datetime2_tag;?></td>
+				<td align="center"><?php echo $max;?></td>
+    			<td align="center"><?php echo $min;?></td>
+				<td align="center"><?php echo $mean;?></td>
+				<td align="center"><?php echo $median;?></td>
+				<td align="center"><?php echo $mode;?></td>
+			</tr>
+		</tbody>
+		</table>
+
+		<br><br>
+		<!-- Separate table for totals since there will be more values -->
+		<table style="width: 100%">
+		<tr>
+			<th> Minute </th>			
+			<th> Total </th>
+		</tr>
+		<tbody>
+		<?php
+		$total_minute = mysql_query("SELECT DISTINCT MINUTE(`DateTime`) AS minute FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		$n = 0;
+		while ($row_minute = mysql_fetch_array($total_minute)) 
+		{
+			$rs[$n] = $row_minute['minute'];
+			$n = $n+1;
+		}
+		$d = 0;
+		foreach ($rs as $c)
+		{
+			$total_amount = mysql_query("SELECT COUNT(*) AS count FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag' AND MINUTE(`DateTime`) = '$c'", $connect);
+			while($row_minute = mysql_fetch_array($total_amount))
+			{
+				$total_am[$d] = $row_minute['count'];
+			}
+			$d = $d+1;
+		}
+		$d = 0;
+		$total_minute = mysql_query("SELECT DISTINCT MINUTE(`DateTime`) AS minute FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+		while ($row_minute = mysql_fetch_array($total_minute))
+		{
+		?>
+			<tr>
+				<td align="center"><?php echo $row_minute['minute'];?></td>
+				<td align="center"><?php echo $total_am[$d];?></td>
+			</tr>
+		<?php
+			$d = $d+1;
+		}
+		?>
+		</tbody>
+		</table>
+		<br><br>
+	<?php
+	}
+	else
+	{
+	?>
+		<h2> All Time </h2>
+		<p> Data of people who entered within entire time frame </p>
+
+		<table style="width: 100%">
+			<tr>
+				<th> Count </th>
+				<th> DateTime </th>
+			</tr>
+			<tbody>
+			<?php
+			$select_between = mysql_query("SELECT * FROM `Arduino` WHERE `DateTime` BETWEEN '$datetime1_tag' AND '$datetime2_tag'", $connect);
+			while ($row_sel = mysql_fetch_array($select_between)) 
+			{
+			?>
+				<tr>
+					<td align="center"><?php echo $row_sel['Count'];?></td>
+					<td align="center"><?php echo $row_sel['DateTime'];?></td>
+				</tr>
+			<?php
+			}
+			?>
+			</tbody>
+		</table>
+	<?php
+	}
+}
+?>
+
+</body>
+</html>
